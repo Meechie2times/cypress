@@ -1,63 +1,32 @@
-version: 2.1
-setup: true
+def find_max(numbers):
+    """
+    Find and return the maximum number from a list of numbers.
 
-orbs:
-  continuation: circleci/continuation@1.0.0
+    Parameters:
+    numbers (list): A list of numerical values.
 
-jobs:
-  verify-ci-should-run:
-    resource_class: small
-    docker:
-      - image: cimg/node:current
-    steps:
-      - run:
-          name: Verify CI should run
-          command: |
-            # run CI when manually triggers via CircleCi Dashboard
-            if [ <<pipeline.trigger_source>> == 'api' ]; then
-              echo "Always run CI when manually triggered from the UI."
-              exit 0
-            fi
+    Returns:
+    float or None: The maximum number in the list or None if the list is empty.
+    """
+    
+    # Check if the input list is empty
+    if not numbers:
+        return None  # Return None to indicate that there is no maximum in an empty list
 
-            if [[ "$CIRCLE_BRANCH" == "develop" || "$CIRCLE_BRANCH" == "release/"* ]]; then
-              echo "Always run CI for develop and for release candidate branches."
-              exit 0
-            fi
+    # Initialize max_num with the first element of the list
+    max_num = numbers[0]
 
-            LAST_COMMIT_MESSAGE=$(curl --silent "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/commits/${CIRCLE_BRANCH}" | jq '.commit.message')
+    # Iterate through each number in the list
+    for num in numbers:
+        # Update max_num if the current number is greater
+        if num > max_num:
+            max_num = num
 
-            if [[ "$LAST_COMMIT_MESSAGE" =~ "run ci" ]]; then
-              echo "Always run CI when the commit message includes 'run ci'."
-              exit 0
-            fi
+    return max_num  # Return the maximum number found
 
-            cancel_build () {
-              echo "Canceling the CI build..."
-              circleci-agent step halt
-            }
-
-            TRIGGER_INSTRUCTIONS="to trigger CI , include 'run ci' in the commit message or click the 'Trigger Pipeline' button in the CircleCI UI."
-
-            if [ ! -z "${CIRCLE_PULL_REQUEST##*/}" ]; then
-              DRAFT=$(curl --silent "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/pulls/${CIRCLE_PULL_REQUEST##*/}" | jq '.draft')
-
-              if [[ "${DRAFT}" == true ]]; then
-                echo "Skipping CI; PR is in draft - $TRIGGER_INSTRUCTIONS"
-                cancel_build
-              fi
-
-              echo "Always run CI for PR that is ready for review."
-              exit 0
-            fi
-
-            echo "Skipping CI; branch in progress - $TRIGGER_INSTRUCTIONS"
-            cancel_build
-      - checkout
-      - continuation/continue:
-          configuration_path: .circleci/workflows.yml
-
-workflows:
-  # the setup-workflow workflow is always triggered.
-  setup-workflow:
-    jobs:
-      - verify-ci-should-run
+# Example usage:
+if __name__ == "__main__":
+    # Test cases to validate the function
+    print(find_max([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5]))  # Should return 9
+    print(find_max([-7, -1, -5, -3]))                   # Should return -1
+    print(find_max([]))                                  # Should return None
